@@ -5,23 +5,38 @@ services:
     build: .
     container_name: ai-tarot
     restart: unless-stopped
+
     ports:
       - "3000:3000"
+
     environment:
-      # AI 配置（推荐使用 .env 文件）
       - AI_PROVIDER=${AI_PROVIDER:-openai}
+
+      # OpenAI
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-mini}
+
+      # DeepSeek
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - DEEPSEEK_BASE_URL=${DEEPSEEK_BASE_URL}
+      - DEEPSEEK_MODEL=${DEEPSEEK_MODEL:-deepseek-chat}
+
+      # Claude
       - CLAUDE_API_KEY=${CLAUDE_API_KEY}
       - CLAUDE_MODEL=${CLAUDE_MODEL:-claude-sonnet-4-20250514}
+
+      # 服务配置
       - PORT=3000
       - RATE_LIMIT=20
       - ALLOWED_ORIGIN=${ALLOWED_ORIGIN:-*}
       - NODE_ENV=production
+
     volumes:
       - tarot-logs:/app/logs
+
     networks:
       - tarot-net
+
     logging:
       driver: "json-file"
       options:
