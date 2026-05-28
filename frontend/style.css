@@ -367,3 +367,14 @@ body {
   .cards-grid { grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); }
   .tarot-card { width: 110px; padding: 0.8rem 0.5rem; }
 }
+
+/* 导航博客超链接 */
+.footer-link {
+  color: inherit;          /* 继承父元素颜色 */
+  text-decoration: none;  /* 去掉下划线 */
+}
+
+.footer-link:hover {
+  color: inherit;          /* 悬停也不变色 */
+  text-decoration: none;  /* 悬停也无下划线 */
+}
