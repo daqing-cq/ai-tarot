@@ -4,9 +4,6 @@
 
 如果没有一点代码基础的，https://www.ta-ku.top/blog/ai-tarot-web 可以看一下，完整代码以及每一步教程基本上写的很详细哈；
 
-> 技术栈：Node.js + Express + OpenAI/Claude API + Docker + aaPanel + Nginx  
-> 系统推荐：**Debian（天下第一！）**
-
 ---
 
 ## 📁 目录结构总览
@@ -26,3 +23,6 @@ ai-tarot/
 ├── docker-compose.yml
 └── nginx.conf
 ```
+
+> 技术栈：Node.js + Express + OpenAI/Claude API + Docker + aaPanel + Nginx  
+> 系统推荐：**Debian（天下第一！）**
