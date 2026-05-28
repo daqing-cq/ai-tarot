@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🔮 神秘塔罗 · AI占卜</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- 星星背景 -->
+  <div class="stars" id="stars"></div>
+
+  <!-- 顶部标题 -->
+  <header class="header">
+    <div class="logo">🔮</div>
+    <h1 class="title">神秘塔罗</h1>
+    <p class="subtitle">AI · 占卜 · 启示</p>
+  </header>
+
+  <!-- 主容器 -->
+  <main class="main">
+
+    <!-- 问题输入区 -->
+    <section class="question-section glass-card">
+      <h2>✨ 请将心中的问题告知星辰</h2>
+      <textarea
+        id="questionInput"
+        class="question-input"
+        placeholder="你可以问关于爱情、事业、人生方向……或者什么都不问，让塔罗为你揭示当下的能量"
+        maxlength="200"
+        rows="3"
+      ></textarea>
+      <div class="char-count"><span id="charCount">0</span>/200</div>
+    </section>
+
+    <!-- 牌阵选择 -->
+    <section class="spread-section">
+      <h2>🃏 选择牌阵</h2>
+      <div class="spread-buttons">
+        <button class="spread-btn active" data-spread="single">
+          <span class="spread-icon">🌙</span>
+          <span class="spread-name">单张牌</span>
+          <span class="spread-desc">快速洞察当下</span>
+        </button>
+        <button class="spread-btn" data-spread="three">
+          <span class="spread-icon">⭐</span>
+          <span class="spread-name">时间三张</span>
+          <span class="spread-desc">过去·现在·未来</span>
+        </button>
+        <button class="spread-btn" data-spread="celtic">
+          <span class="spread-icon">🌟</span>
+          <span class="spread-name">凯尔特十字</span>
+          <span class="spread-desc">全面深度解析</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- 开始占卜按钮 -->
+    <div class="divination-btn-container">
+      <button id="divinationBtn" class="divination-btn">
+        <span class="btn-orb"></span>
+        <span class="btn-text">✨ 开启占卜</span>
+      </button>
+    </div>
+
+    <!-- 牌面展示区 -->
+    <section class="cards-section" id="cardsSection" style="display:none">
+      <h2 class="section-title">🌟 命运之牌</h2>
+      <div class="cards-grid" id="cardsGrid"></div>
+    </section>
+
+    <!-- AI解读区 -->
+    <section class="interpretation-section glass-card" id="interpretationSection" style="display:none">
+      <div class="interpretation-header">
+        <div class="oracle-avatar">🔮</div>
+        <div>
+          <h2>神谕解读</h2>
+          <p class="oracle-title">— 星辰传话，命运低语 —</p>
+        </div>
+      </div>
+      <div class="interpretation-text" id="interpretationText">
+        <div class="loading-dots">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+      <button id="resetBtn" class="reset-btn" style="display:none">🔄 再次占卜</button>
+    </section>
+
+  </main>
+
+  <!-- 底部 -->
+  <footer class="footer">
+    <p>🌙 塔罗仅供参考，人生由你掌舵 · Powered by AI</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

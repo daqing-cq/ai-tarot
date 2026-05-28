@@ -1,0 +1,369 @@
+:root {
+  --bg-deep: #0a0612;
+  --bg-mid: #120824;
+  --gold: #d4a843;
+  --gold-light: #f0c96b;
+  --purple: #7b3fa0;
+  --purple-light: #a855f7;
+  --mystic-blue: #1e3a5f;
+  --text-main: #e8dfc8;
+  --text-muted: #9c8a6e;
+  --glass-bg: rgba(255,255,255,0.04);
+  --glass-border: rgba(212,168,67,0.15);
+  --card-bg: #1a0f2e;
+  --card-border: rgba(212,168,67,0.3);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Noto Serif SC', serif;
+  background: var(--bg-deep);
+  color: var(--text-main);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* 星星 */
+.stars {
+  position: fixed; top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none; z-index: 0;
+}
+.star {
+  position: absolute;
+  width: 2px; height: 2px;
+  background: white;
+  border-radius: 50%;
+  animation: twinkle var(--dur) var(--delay) infinite alternate;
+}
+@keyframes twinkle {
+  from { opacity: 0.1; transform: scale(1); }
+  to { opacity: 0.9; transform: scale(1.5); }
+}
+
+/* 顶部 */
+.header {
+  position: relative; z-index: 1;
+  text-align: center;
+  padding: 3rem 1rem 1.5rem;
+  background: radial-gradient(ellipse at top, rgba(123,63,160,0.3) 0%, transparent 70%);
+}
+.logo {
+  font-size: 4rem;
+  animation: float 4s ease-in-out infinite;
+  display: block; margin-bottom: 0.5rem;
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(-5deg); }
+  50% { transform: translateY(-15px) rotate(5deg); }
+}
+.title {
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: clamp(2rem, 6vw, 4rem);
+  background: linear-gradient(135deg, var(--gold), var(--purple-light), var(--gold-light));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: none;
+  letter-spacing: 0.2em;
+}
+.subtitle {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  letter-spacing: 0.5em;
+  margin-top: 0.3rem;
+}
+
+/* 主体 */
+.main {
+  position: relative; z-index: 1;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 1rem 1.5rem 4rem;
+}
+
+/* 玻璃卡片 */
+.glass-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 2rem;
+  backdrop-filter: blur(10px);
+  margin-bottom: 2rem;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+}
+
+/* 问题区 */
+.question-section h2 {
+  font-size: 1.1rem;
+  color: var(--gold-light);
+  margin-bottom: 1rem;
+  font-weight: 300;
+  letter-spacing: 0.05em;
+}
+.question-input {
+  width: 100%;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 1rem;
+  color: var(--text-main);
+  font-family: 'Noto Serif SC', serif;
+  font-size: 1rem;
+  resize: none;
+  transition: border-color 0.3s;
+}
+.question-input:focus {
+  outline: none;
+  border-color: var(--gold);
+}
+.question-input::placeholder { color: var(--text-muted); }
+.char-count {
+  text-align: right;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.4rem;
+}
+
+/* 牌阵按钮 */
+.spread-section { margin-bottom: 2rem; }
+.spread-section h2 {
+  font-size: 1.1rem;
+  color: var(--gold-light);
+  margin-bottom: 1rem;
+  font-weight: 300;
+  letter-spacing: 0.05em;
+  text-align: center;
+}
+.spread-buttons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+.spread-btn {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 1.5rem 1rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 0.4rem;
+  color: var(--text-main);
+  font-family: inherit;
+}
+.spread-btn:hover {
+  border-color: var(--gold);
+  background: rgba(212,168,67,0.1);
+  transform: translateY(-2px);
+}
+.spread-btn.active {
+  border-color: var(--gold);
+  background: rgba(212,168,67,0.12);
+  box-shadow: 0 0 20px rgba(212,168,67,0.2);
+}
+.spread-icon { font-size: 2rem; }
+.spread-name { font-size: 1rem; font-weight: 600; color: var(--gold-light); }
+.spread-desc { font-size: 0.78rem; color: var(--text-muted); }
+
+/* 占卜按钮 */
+.divination-btn-container { text-align: center; margin-bottom: 3rem; }
+.divination-btn {
+  position: relative;
+  background: linear-gradient(135deg, #4a1a7a, #8b4513, #4a1a7a);
+  background-size: 200%;
+  border: 1px solid var(--gold);
+  border-radius: 50px;
+  padding: 1rem 3rem;
+  font-size: 1.1rem;
+  font-family: 'Ma Shan Zheng', cursive;
+  color: var(--gold-light);
+  cursor: pointer;
+  letter-spacing: 0.1em;
+  transition: all 0.3s;
+  box-shadow: 0 0 30px rgba(212,168,67,0.2);
+  animation: shimmer 3s linear infinite;
+  overflow: hidden;
+}
+@keyframes shimmer {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+.divination-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 50px rgba(212,168,67,0.4);
+}
+.divination-btn:disabled {
+  opacity: 0.5; cursor: not-allowed; transform: none;
+}
+.btn-orb {
+  position: absolute;
+  width: 100%; height: 100%;
+  top: 0; left: -100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  transition: left 0.5s;
+}
+.divination-btn:hover .btn-orb { left: 100%; }
+
+/* 塔罗牌展示 */
+.cards-section { margin-bottom: 2rem; }
+.section-title {
+  text-align: center;
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 1.5rem;
+  color: var(--gold-light);
+  margin-bottom: 1.5rem;
+  letter-spacing: 0.1em;
+}
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+  justify-items: center;
+}
+.tarot-card {
+  width: 140px;
+  background: linear-gradient(135deg, #1a0b30, #2d1458);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  padding: 1.2rem 0.8rem;
+  text-align: center;
+  cursor: default;
+  transition: transform 0.3s;
+  position: relative;
+  overflow: hidden;
+  animation: cardReveal 0.6s ease-out both;
+}
+@keyframes cardReveal {
+  from { opacity: 0; transform: rotateY(90deg) scale(0.8); }
+  to { opacity: 1; transform: rotateY(0) scale(1); }
+}
+.tarot-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0;
+  right: 0; bottom: 0;
+  background: radial-gradient(ellipse at top, rgba(212,168,67,0.05), transparent);
+  pointer-events: none;
+}
+.tarot-card.reversed { transform: rotate(180deg); }
+.tarot-card.reversed .card-position,
+.tarot-card.reversed .card-reversed-badge { transform: rotate(180deg); }
+.card-position {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+}
+.card-emoji { font-size: 2.5rem; margin-bottom: 0.5rem; display: block; }
+.card-name {
+  font-size: 0.9rem;
+  color: var(--gold-light);
+  margin-bottom: 0.3rem;
+  font-weight: 600;
+}
+.card-name-en {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+.card-reversed-badge {
+  display: inline-block;
+  background: rgba(180, 50, 50, 0.3);
+  border: 1px solid rgba(200,80,80,0.4);
+  border-radius: 4px;
+  padding: 0.1rem 0.4rem;
+  font-size: 0.6rem;
+  color: #ff8888;
+  margin-bottom: 0.5rem;
+}
+.card-keywords {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+/* AI解读 */
+.interpretation-section { }
+.interpretation-header {
+  display: flex; align-items: center; gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--glass-border);
+}
+.oracle-avatar {
+  font-size: 3rem;
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+@keyframes pulse-glow {
+  0%, 100% { filter: drop-shadow(0 0 10px rgba(212,168,67,0.5)); }
+  50% { filter: drop-shadow(0 0 25px rgba(168,85,247,0.8)); }
+}
+.interpretation-header h2 {
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 1.4rem;
+  color: var(--gold-light);
+  letter-spacing: 0.1em;
+}
+.oracle-title {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 0.2rem;
+}
+.interpretation-text {
+  line-height: 2;
+  font-size: 1rem;
+  color: var(--text-main);
+  min-height: 100px;
+  white-space: pre-wrap;
+}
+.loading-dots {
+  display: flex; gap: 8px; align-items: center;
+  padding: 1rem 0;
+}
+.loading-dots span {
+  width: 8px; height: 8px;
+  background: var(--gold);
+  border-radius: 50%;
+  animation: bounce 1.4s ease-in-out infinite;
+}
+.loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+.loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes bounce {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+  40% { transform: translateY(-10px); opacity: 1; }
+}
+
+.reset-btn {
+  margin-top: 2rem;
+  background: transparent;
+  border: 1px solid var(--gold);
+  border-radius: 8px;
+  padding: 0.6rem 1.5rem;
+  color: var(--gold);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.9rem;
+  transition: all 0.3s;
+}
+.reset-btn:hover {
+  background: rgba(212,168,67,0.1);
+}
+
+/* 底部 */
+.footer {
+  position: relative; z-index: 1;
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  border-top: 1px solid var(--glass-border);
+}
+
+/* 响应式 */
+@media (max-width: 600px) {
+  .spread-buttons { grid-template-columns: 1fr; }
+  .cards-grid { grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); }
+  .tarot-card { width: 110px; padding: 0.8rem 0.5rem; }
+}

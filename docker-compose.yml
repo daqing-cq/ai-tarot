@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  tarot-app:
+    build: .
+    container_name: ai-tarot
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      # AI 配置（推荐使用 .env 文件）
+      - AI_PROVIDER=${AI_PROVIDER:-openai}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-mini}
+      - CLAUDE_API_KEY=${CLAUDE_API_KEY}
+      - CLAUDE_MODEL=${CLAUDE_MODEL:-claude-sonnet-4-20250514}
+      - PORT=3000
+      - RATE_LIMIT=20
+      - ALLOWED_ORIGIN=${ALLOWED_ORIGIN:-*}
+      - NODE_ENV=production
+    volumes:
+      - tarot-logs:/app/logs
+    networks:
+      - tarot-net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  tarot-net:
+    driver: bridge
+
+volumes:
+  tarot-logs:
