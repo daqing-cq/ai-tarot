@@ -1,8 +1,8 @@
 # 🔮 AI 塔罗牌占卜网站
 
-很简单的一个web页面，所有代码基本上都是固定的，只有.env需要添加AI模型的API以外，不需要任何技术层次操作，直接部署即可；
+很简单的一个web页面，所有代码都是固定的，什么都不需要改；只有.env需要添加AI模型的API，不需要任何技术层次操作，直接Docker部署即可；
 
-如果没有一点代码基础的，https://www.ta-ku.top/blog/ai-tarot-web 可以看一下，完整教程基本上写的很详细哈；
+如果没有一点代码基础的，https://www.ta-ku.top/blog/ai-tarot-web 可以看一下，完整代码以及每一步教程基本上写的很详细哈；
 
 > 技术栈：Node.js + Express + OpenAI/Claude API + Docker + aaPanel + Nginx  
 > 系统推荐：**Debian（天下第一！）**
