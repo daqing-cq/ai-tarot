@@ -14,7 +14,7 @@
     AI_DAILY_LIMIT=5
     #5改成需要的数字
     ```
-**`server.js`的更改**  
+**server.js`的更改**  
   1.每个IP每24小时最多调用AI解读次数  
     ```bash
     # 原代码
