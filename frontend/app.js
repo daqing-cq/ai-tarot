@@ -121,7 +121,7 @@ document.getElementById('divinationBtn').addEventListener('click', async () => {
           <div style="font-size:2.5rem;margin-bottom:1rem;">🌙</div>
           <div style="color:#d4a843;font-size:1rem;line-height:2.2;">
             你今日的占卜次数已用完<br>
-            <span style="font-size:0.85rem;color:#9c8a6e;">每24小时限 ${limit} 次</span>
+            <span style="font-size:0.85rem;color:#9c8a6e;">${errData.error}</span>
           </div>
           <div style="margin-top:1.2rem;">
             <span style="color:#9c8a6e;font-size:0.9rem;">距离下次占卜还剩</span><br>
