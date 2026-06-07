@@ -52,8 +52,8 @@ function aiDailyLimiter(req, res, next) {
   const now = Date.now();
   const limit = parseInt(process.env.AI_DAILY_LIMIT) || 2;
 
-  // ⬇️ 修改占卜时间窗口：把 72 改成你需要的小时数
-  const windowMs = 72 * 60 * 60 * 1000; // 72小时
+  // ⬇️ 修改占卜时间窗口：把 24 改成你需要的小时数
+  const windowMs = 24 * 60 * 60 * 1000; // 24小时
 
   const record = aiCallStore.get(ip);
 
