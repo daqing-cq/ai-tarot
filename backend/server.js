@@ -31,7 +31,7 @@ function getRealIP(req) {
 
 // ===== 24小时内限制 AI_DAILY_LIMIT 次的限流器 =====
 // 使用内存 Map 存储，key=IP，value={ count, resetTime }
-// 注意：容器重启后计数清零（如需持久化可换 Redis，见文末注释）
+// 注意：容器重启后计数清零（如需持久化可换 Redis）
 const aiCallStore = new Map();
 
 // 每1小时自动清理过期记录，防止内存无限增长
@@ -44,12 +44,16 @@ setInterval(() => {
   }
 }, 60 * 60 * 1000);
 
-// 限流中间件：同一IP 24小时内最多调用 AI_DAILY_LIMIT 次（默认2次）
+// 限流中间件：同一IP在 windowMs 时间内最多调用 AI_DAILY_LIMIT 次（默认2次）
+// 修改时间：只需改 windowMs 的数字，例如 72 * 60 * 60 * 1000 = 72小时
+// 修改次数：在 .env 里改 AI_DAILY_LIMIT=5 即可，无需改代码
 function aiDailyLimiter(req, res, next) {
   const ip = getRealIP(req);
   const now = Date.now();
   const limit = parseInt(process.env.AI_DAILY_LIMIT) || 2;
-  const windowMs = 24 * 60 * 60 * 1000; // 24小时
+
+  // ⬇️ 修改占卜时间窗口：把 72 改成你需要的小时数
+  const windowMs = 72 * 60 * 60 * 1000; // 72小时
 
   const record = aiCallStore.get(ip);
 
@@ -69,15 +73,17 @@ function aiDailyLimiter(req, res, next) {
   const remainMs = record.resetTime - now;
   const remainHours = Math.ceil(remainMs / 1000 / 60 / 60);
 
+  // ⬇️ 修改提示文字：把"每72小时"改成对应的小时数
   return res.status(429).json({
-    error: `你今日的占卜次数已用完（每24小时限${limit}次），请${remainHours}小时后再来 🌙`,
+    error: `你今日的占卜次数已用完（每72小时限${limit}次），请${remainHours}小时后再来 🌙`,
     resetIn: remainMs,
     resetTime: record.resetTime
   });
 }
 
 // ===== 基础限流（防恶意刷接口）=====
-// 每分钟最多30次请求，防止暴力攻击
+// 每分钟最多 RATE_LIMIT 次请求，防止暴力攻击
+// 在 .env 里设置 RATE_LIMIT=30 即可修改
 const baseLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: parseInt(process.env.RATE_LIMIT) || 30,
@@ -87,6 +93,9 @@ const baseLimiter = rateLimit({
 app.use('/api/', baseLimiter);
 
 // ===== 统一 AI 配置工厂 =====
+// 根据 .env 中的 AI_PROVIDER 自动选择对应客户端配置
+// 支持: openai | deepseek | gemini | claude
+// 切换方式：在 .env 里改 AI_PROVIDER=deepseek 即可，无需改代码
 function getAIClientConfig() {
   const provider = process.env.AI_PROVIDER || 'openai';
 
@@ -119,23 +128,26 @@ function getAIClientConfig() {
 
   const config = configs[provider];
   if (!config) throw new Error(`不支持的 AI_PROVIDER: ${provider}`);
-  if (!config.apiKey) throw new Error(`${provider} 的 API Key 未配置，请检查 .env 文件`);
+
+  // ⚠️ 安全处理：API Key 未配置时抛出通用错误，不暴露具体信息
+  if (!config.apiKey) throw new Error('AI服务暂时不可用');
 
   return config;
 }
 
 // ===== API 路由 =====
 
-// 健康检查
+// 健康检查（不暴露敏感配置信息）
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
-    provider: process.env.AI_PROVIDER || 'openai',
     timestamp: new Date().toISOString()
+    // ⚠️ 安全：不返回 provider、model 等信息，防止暴露技术栈
   });
 });
 
-// 查询当前 IP 今日剩余次数（前端可用来显示"今日剩余X次"）
+// 查询当前 IP 今日剩余次数
+// 前端可调用此接口显示"今日剩余X次"
 app.get('/api/quota', (req, res) => {
   const ip = getRealIP(req);
   const now = Date.now();
@@ -179,6 +191,7 @@ app.post('/api/interpret', aiDailyLimiter, async (req, res) => {
     return res.status(400).json({ error: '缺少牌面数据' });
   }
 
+  // 构建牌面描述文本
   const cardDescriptions = cards.map((card, i) => {
     const pos = positions[i] || `第${i + 1}张`;
     const orientation = card.isReversed ? '逆位' : '正位';
@@ -192,6 +205,7 @@ app.post('/api/interpret', aiDailyLimiter, async (req, res) => {
     celtic: '凯尔特十字'
   }[spreadType] || '未知';
 
+  // AI 系统提示词（占卜师人设）
   const systemPrompt = `你是一位神秘而睿智的塔罗牌占卜师，拥有数十年的塔罗解读经验。
 你的解读风格：温柔而深邃，充满东方哲学智慧，语言优美诗意。
 请用中文进行占卜解读，每次解读都要：
@@ -201,6 +215,7 @@ app.post('/api/interpret', aiDailyLimiter, async (req, res) => {
 4. 语言富有诗意，但不要过于玄幻
 5. 字数控制在400-600字`;
 
+  // 用户提示词（包含牌面信息）
   const userPrompt = `问卜者的问题：${question || '请为我进行综合占卜'}
 
 抽到的牌面（${spreadLabel}牌阵）：
@@ -208,7 +223,8 @@ ${cardDescriptions}
 
 请对以上塔罗牌进行深入解读，给出完整的占卜结果和人生建议。`;
 
-  // 设置 SSE 响应头
+  // 设置 SSE 响应头（流式输出必须）
+  // ⚠️ Nginx 反代需配置 proxy_buffering off 否则会变成一次性返回
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
@@ -218,6 +234,8 @@ ${cardDescriptions}
 
     // ----------------------------------------
     // OpenAI 兼容模式（openai / deepseek / gemini）
+    // DeepSeek 和 Gemini 均兼容 OpenAI 接口格式
+    // 只需切换 baseURL 和 apiKey，无需安装额外 SDK
     // ----------------------------------------
     if (aiConfig.type === 'openai_compat') {
       const OpenAI = require('openai');
@@ -246,6 +264,7 @@ ${cardDescriptions}
 
     // ----------------------------------------
     // Claude 原生 SDK（Anthropic）
+    // 需要单独安装：npm install @anthropic-ai/sdk
     // ----------------------------------------
     } else if (aiConfig.type === 'claude') {
       const Anthropic = require('@anthropic-ai/sdk');
@@ -272,8 +291,13 @@ ${cardDescriptions}
     res.end();
 
   } catch (error) {
-    console.error('AI调用错误:', error.message);
-    res.write(`data: ${JSON.stringify({ error: `AI解读失败：${error.message}` })}\n\n`);
+    // ⚠️ 安全关键：只把错误记录到服务器日志，绝对不把原始错误发给前端
+    // 原始错误可能包含 API Key 的前四位和后四位（如 sk-ab12****yz89）
+    // 如果直接发给前端，用户可以在浏览器控制台或抓包工具中看到 Key 特征
+    console.error('AI调用错误（仅服务端可见）:', error.message);
+
+    // 前端只收到通用提示，不包含任何敏感信息
+    res.write(`data: ${JSON.stringify({ error: 'AI解读服务暂时不可用，请稍后再试' })}\n\n`);
     res.end();
   }
 });
@@ -283,16 +307,24 @@ app.use(express.static('public'));
 
 // 启动服务
 app.listen(PORT, () => {
-  const provider = process.env.AI_PROVIDER || 'openai';
   const limit = parseInt(process.env.AI_DAILY_LIMIT) || 2;
   console.log(`🔮 AI塔罗服务运行于 http://localhost:${PORT}`);
-  console.log(`📡 当前AI提供商: ${provider}`);
-  console.log(`🛡️  每IP每24小时限制调用AI: ${limit}次`);
+  // ⚠️ 安全：启动日志不输出 AI_PROVIDER 和 API Key，防止日志泄露
+  console.log(`🛡️  每IP每72小时限制调用AI: ${limit}次`);
   console.log(`🌐 跨域允许来源: ${process.env.ALLOWED_ORIGIN || '*'}`);
 });
 
 // ============================================================
-// 💡 进阶：如需容器重启后限流数据不丢失，可改用 Redis
-// 安装：npm install ioredis
-// 替换 aiCallStore 相关逻辑为 Redis 的 INCR + EXPIRE 命令
+// 💡 常用修改说明：
+//
+// 改时间窗口：找到 windowMs 那行，把 72 改成需要的小时数
+//             同时把下面 error 提示文字里的"每72小时"也改掉
+//
+// 改每IP次数：在 .env 里改 AI_DAILY_LIMIT=5，无需改代码
+//
+// 改AI提供商：在 .env 里改 AI_PROVIDER=deepseek，无需改代码
+//
+// 进阶持久化：如需容器重启后限流数据不丢失，可改用 Redis
+//             安装：npm install ioredis
+//             替换 aiCallStore 相关逻辑为 Redis INCR + EXPIRE
 // ============================================================
