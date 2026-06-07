@@ -45,7 +45,7 @@ setInterval(() => {
 }, 60 * 60 * 1000);
 
 // 限流中间件：同一IP在 windowMs 时间内最多调用 AI_DAILY_LIMIT 次（默认2次）
-// 修改时间：只需改 windowMs 的数字，例如 72 * 60 * 60 * 1000 = 72小时
+// 修改时间：只需改 windowMs 的数字，例如 24 * 60 * 60 * 1000 = 24小时
 // 修改次数：在 .env 里改 AI_DAILY_LIMIT=5 即可，无需改代码
 function aiDailyLimiter(req, res, next) {
   const ip = getRealIP(req);
@@ -73,7 +73,7 @@ function aiDailyLimiter(req, res, next) {
   const remainMs = record.resetTime - now;
   const remainHours = Math.ceil(remainMs / 1000 / 60 / 60);
 
-  // ⬇️ 修改提示文字：把"每72小时"改成对应的小时数
+  // ⬇️ 修改提示文字：把"每24小时"改成对应的小时数
   return res.status(429).json({
     error: `你今日的占卜次数已用完（每24小时限${limit}次），请${remainHours}小时后再来 🌙`,
     resetIn: remainMs,
