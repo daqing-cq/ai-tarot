@@ -75,7 +75,7 @@ function aiDailyLimiter(req, res, next) {
 
   // ⬇️ 修改提示文字：把"每72小时"改成对应的小时数
   return res.status(429).json({
-    error: `你今日的占卜次数已用完（每72小时限${limit}次），请${remainHours}小时后再来 🌙`,
+    error: `你今日的占卜次数已用完（每24小时限${limit}次），请${remainHours}小时后再来 🌙`,
     resetIn: remainMs,
     resetTime: record.resetTime
   });
