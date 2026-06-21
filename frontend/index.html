@@ -55,6 +55,11 @@
           <span class="spread-name">凯尔特十字</span>
           <span class="spread-desc">全面深度解析</span>
         </button>
+        <button class="spread-btn" data-spread="season" id="seasonBtn">
+          <span class="spread-icon">🧭</span>
+          <span class="spread-name">四季牌阵</span>
+          <span class="spread-desc" id="seasonDesc">仅限春分·夏至·秋分·冬至</span>
+        </button>
       </div>
     </section>
 
@@ -62,14 +67,19 @@
     <div class="divination-btn-container">
       <button id="divinationBtn" class="divination-btn">
         <span class="btn-orb"></span>
-        <span class="btn-text">✨ 开启占卜</span>
+        <span class="btn-text">🃏 抽取塔罗牌</span>
       </button>
     </div>
 
     <!-- 牌面展示区 -->
     <section class="cards-section" id="cardsSection" style="display:none">
       <h2 class="section-title">🌟 命运之牌</h2>
+      <p class="flip-hint" id="flipHint">🔮 轻触卡牌，揭开命运的面纱</p>
       <div class="cards-grid" id="cardsGrid"></div>
+      <div class="cards-actions">
+        <button id="flipAllBtn" class="flip-all-btn">✨ 翻开全部</button>
+        <button id="interpretBtn" class="interpret-btn" disabled>🔮 召唤神谕（AI 解读）</button>
+      </div>
     </section>
 
     <!-- AI解读区 -->
