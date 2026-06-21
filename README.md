@@ -30,6 +30,7 @@ ai-tarot/
 ├── backend/
 │   ├── server.js          # Express 主服务
 │   ├── tarot-data.js      # 78张塔罗牌数据
+│   ├── solar-terms.js     # 计算今年的春分/夏至/秋分/冬至具体日期
 │   ├── package.json
 │   └── .env               # 环境变量（API Key等）
 ├── frontend/
