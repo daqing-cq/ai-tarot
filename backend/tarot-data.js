@@ -230,14 +230,42 @@ function drawCards(count) {
   }));
 }
 
+// ===== 四季牌阵专用抽牌 =====
+// 四季牌阵不是从整副牌里随便抽：每个位置只能从指定的花色里抽
+// 左(权杖) / 下(圣杯) / 右(宝剑) / 上(星币) / 中(大阿卡纳)
+function pickOneFromSuit(suit) {
+  const pool = tarotCards.filter(c => c.suit === suit);
+  const card = pool[Math.floor(Math.random() * pool.length)];
+  return { ...card, isReversed: Math.random() > 0.5 };
+}
+
+function drawSeasonCards() {
+  // 返回顺序必须和 getSpreadPositions('season') 的顺序一一对应
+  return [
+    pickOneFromSuit('wands'),     // 左 · 权杖 · 行动与能量
+    pickOneFromSuit('cups'),      // 下 · 圣杯 · 情感状态
+    pickOneFromSuit('swords'),    // 右 · 宝剑 · 思维与人际
+    pickOneFromSuit('pentacles'), // 上 · 星币 · 物质与健康
+    pickOneFromSuit('major')      // 中 · 大阿卡纳 · 本季关键与灵性成长
+  ];
+}
+
 // 根据牌阵获取位置含义
 function getSpreadPositions(spreadType) {
   const spreads = {
     single: ["当前状况"],
     three: ["过去", "现在", "未来"],
-    celtic: ["当前状况", "挑战/阻碍", "远因/基础", "近因/过去", "可能的结果/未来", "你的态度", "外部影响", "希望与恐惧", "建议", "最终结果"]
+    celtic: ["当前状况", "挑战/阻碍", "远因/基础", "近因/过去", "可能的结果/未来", "你的态度", "外部影响", "希望与恐惧", "建议", "最终结果"],
+    // 四季牌阵：十字形，每个位置固定对应一种花色（含义见上方 drawSeasonCards 注释）
+    season: [
+      "左 · 权杖 · 行动与能量",
+      "下 · 圣杯 · 情感状态",
+      "右 · 宝剑 · 思维与人际",
+      "上 · 星币 · 物质与健康",
+      "中 · 大阿卡纳 · 本季关键与灵性成长"
+    ]
   };
   return spreads[spreadType] || spreads.single;
 }
 
-module.exports = { tarotCards, drawCards, getSpreadPositions };
+module.exports = { tarotCards, drawCards, drawSeasonCards, getSpreadPositions };
