@@ -3,7 +3,8 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-const { drawCards, getSpreadPositions } = require('./tarot-data');
+const { drawCards, drawSeasonCards, getSpreadPositions } = require('./tarot-data');
+const { getTodaySolarTerm, getNextSolarTerm } = require('./solar-terms');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -166,17 +167,41 @@ app.get('/api/quota', (req, res) => {
   });
 });
 
+// 查询四季牌阵今天是否开放（前端用来提前置灰按钮，避免用户选了才被拒）
+app.get('/api/season-status', (req, res) => {
+  const term = getTodaySolarTerm();
+  const next = getNextSolarTerm();
+  res.json({
+    available: !!term || process.env.FORCE_SEASON_AVAILABLE === 'true',
+    today: term,
+    next
+  });
+});
+
 // 抽牌接口（不限次数，抽牌不消耗 AI 配额）
 app.post('/api/draw', (req, res) => {
   const { spreadType = 'three' } = req.body;
-  const validSpreads = ['single', 'three', 'celtic'];
+  const validSpreads = ['single', 'three', 'celtic', 'season'];
 
   if (!validSpreads.includes(spreadType)) {
-    return res.status(400).json({ error: '无效的牌阵类型，仅支持 single / three / celtic' });
+    return res.status(400).json({ error: '无效的牌阵类型，仅支持 single / three / celtic / season' });
+  }
+
+  // 四季牌阵：仅限春分/夏至/秋分/冬至当天（北京时间）开放
+  // FORCE_SEASON_AVAILABLE=true 可在 .env 里临时打开，方便开发时随时测试
+  if (spreadType === 'season' && process.env.FORCE_SEASON_AVAILABLE !== 'true') {
+    const term = getTodaySolarTerm();
+    if (!term) {
+      const next = getNextSolarTerm();
+      return res.status(403).json({
+        error: '四季牌阵只在春分、夏至、秋分、冬至这四天开放，今天还不是这四天之一 🌗',
+        next
+      });
+    }
   }
 
   const countMap = { single: 1, three: 3, celtic: 10 };
-  const cards = drawCards(countMap[spreadType]);
+  const cards = spreadType === 'season' ? drawSeasonCards() : drawCards(countMap[spreadType]);
   const positions = getSpreadPositions(spreadType);
 
   res.json({ cards, positions, spreadType });
@@ -202,7 +227,8 @@ app.post('/api/interpret', aiDailyLimiter, async (req, res) => {
   const spreadLabel = {
     single: '单张',
     three: '三张时间轴',
-    celtic: '凯尔特十字'
+    celtic: '凯尔特十字',
+    season: '四季'
   }[spreadType] || '未知';
 
   // AI 系统提示词（占卜师人设）
@@ -215,11 +241,25 @@ app.post('/api/interpret', aiDailyLimiter, async (req, res) => {
 4. 语言富有诗意，但不要过于玄幻
 5. 字数控制在400-600字`;
 
+  // 四季牌阵有固定的花色→含义对应关系，需要单独告诉AI，否则它不知道这个牌阵的特殊规则
+  const seasonContext = spreadType === 'season' ? `
+
+【四季牌阵专属解读框架，请严格按此对应关系解读】
+四季牌阵只在二分二至（春分、夏至、秋分、冬至）当天进行，这四天太阳能量转换，牌阵的能量格外强，
+用来预测这一季度的运势走向与需要留意的地方。每个位置的花色含义固定，不要按普通牌阵的方式泛泛解读：
+- 权杖牌（左）：代表行动、欲念与能量运用的信息
+- 圣杯牌（下）：代表情感状态
+- 宝剑牌（右）：代表思维状态、理性、人际关系
+- 星币牌（上）：代表工作、物质、生活及健康
+- 大阿卡纳牌（中）：是整个季度的关键点，代表能量与灵性成长，以及需要学习和关注的地方，并影响着整个牌阵
+请先逐张按上述对应关系解读，再综合大阿卡纳牌点出的关键主题，给出本季度的整体建议。` : '';
+
   // 用户提示词（包含牌面信息）
   const userPrompt = `问卜者的问题：${question || '请为我进行综合占卜'}
 
 抽到的牌面（${spreadLabel}牌阵）：
 ${cardDescriptions}
+${seasonContext}
 
 请对以上塔罗牌进行深入解读，给出完整的占卜结果和人生建议。`;
 
