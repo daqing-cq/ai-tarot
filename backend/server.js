@@ -324,7 +324,7 @@ ${seasonContext}
 
       const stream = await client.messages.stream({
         model: aiConfig.model,
-        max_tokens: 2500,
+        max_tokens: 5000,
         system: systemPrompt,
         messages: [{ role: 'user', content: userPrompt }],
       });
