@@ -239,7 +239,7 @@ app.post('/api/interpret', aiDailyLimiter, async (req, res) => {
 2. 结合所有牌的整体能量与关联
 3. 给出具体且有建设性的建议
 4. 语言富有诗意，但不要过于玄幻
-5. 字数控制在400-600字`;
+5. 全文（包含所有小节标题）严格控制在800字以内，避免内容被截断`;
 
   // 四季牌阵有固定的花色→含义对应关系，需要单独告诉AI，否则它不知道这个牌阵的特殊规则
   const seasonContext = spreadType === 'season' ? `
@@ -290,16 +290,25 @@ ${seasonContext}
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
         ],
-        max_tokens: 1200,
+        max_tokens: 5000,
         temperature: 0.85,
         stream: true,
       });
 
+      let finishReason = null;
       for await (const chunk of stream) {
-        const content = chunk.choices[0]?.delta?.content || '';
+        const choice = chunk.choices[0];
+        const content = choice?.delta?.content || '';
         if (content) {
           res.write(`data: ${JSON.stringify({ text: content })}\n\n`);
         }
+        if (choice?.finish_reason) finishReason = choice.finish_reason;
+      }
+
+      // finish_reason === 'length' 说明是被 max_tokens 截断的，不是正常说完
+      // 给个明确提示，别让用户以为是网站坏了
+      if (finishReason === 'length') {
+        res.write(`data: ${JSON.stringify({ text: '\n\n*（因长度限制，解读到此为止，可点击"再次占卜"获取更精炼的解读）*' })}\n\n`);
       }
 
     // ----------------------------------------
@@ -315,15 +324,23 @@ ${seasonContext}
 
       const stream = await client.messages.stream({
         model: aiConfig.model,
-        max_tokens: 1200,
+        max_tokens: 2500,
         system: systemPrompt,
         messages: [{ role: 'user', content: userPrompt }],
       });
 
+      let stopReason = null;
       for await (const event of stream) {
         if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
           res.write(`data: ${JSON.stringify({ text: event.delta.text })}\n\n`);
         }
+        if (event.type === 'message_delta' && event.delta?.stop_reason) {
+          stopReason = event.delta.stop_reason;
+        }
+      }
+
+      if (stopReason === 'max_tokens') {
+        res.write(`data: ${JSON.stringify({ text: '\n\n*（因长度限制，解读到此为止，可点击"再次占卜"获取更精炼的解读）*' })}\n\n`);
       }
     }
 
