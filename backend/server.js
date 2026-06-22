@@ -367,7 +367,7 @@ app.listen(PORT, () => {
   const limit = parseInt(process.env.AI_DAILY_LIMIT) || 2;
   console.log(`🔮 AI塔罗服务运行于 http://localhost:${PORT}`);
   // ⚠️ 安全：启动日志不输出 AI_PROVIDER 和 API Key，防止日志泄露
-  console.log(`🛡️  每IP每72小时限制调用AI: ${limit}次`);
+  console.log(`🛡️  每IP每24小时限制调用AI: ${limit}次`);
   console.log(`🌐 跨域允许来源: ${process.env.ALLOWED_ORIGIN || '*'}`);
 });
 
