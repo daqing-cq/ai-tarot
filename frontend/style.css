@@ -49,6 +49,48 @@ body {
   padding: 3rem 1rem 1.5rem;
   background: radial-gradient(ellipse at top, rgba(123,63,160,0.3) 0%, transparent 70%);
 }
+
+/* 四季牌阵悬浮入口：固定在视口右上角，不随页面滚动移动 */
+.season-float-btn {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1rem;
+  background: var(--glass-bg);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--gold);
+  border-radius: 999px;
+  color: var(--gold-light);
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 0 12px rgba(212,168,67,0.25);
+}
+.season-float-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 18px rgba(212,168,67,0.45);
+}
+.season-float-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+  transform: none;
+}
+.season-float-icon { font-size: 1.1rem; }
+
+@media (max-width: 600px) {
+  .season-float-btn {
+    padding: 0.55rem;
+    top: 0.7rem;
+    right: 0.7rem;
+  }
+  .season-float-btn .season-float-text { display: none; }
+}
 .logo {
   font-size: 4rem;
   animation: float 4s ease-in-out infinite;
@@ -135,6 +177,34 @@ body {
   font-weight: 300;
   letter-spacing: 0.05em;
   text-align: center;
+}
+
+/* 四季牌阵的方位含义说明：每一段整体不换行拆字，超出宽度时整段折到下一行 */
+.season-meaning {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  row-gap: 0.6rem;
+  max-width: 640px;
+  margin: 0.5rem auto 0;
+  padding: 0 0.5rem;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  line-height: 1.8;
+  text-align: center;
+}
+.season-meaning span {
+  white-space: nowrap;
+}
+.season-meaning span:not(:last-child)::after {
+  content: '·';
+  margin: 0 0.8rem;
+  color: var(--gold);
+  opacity: 0.55;
+}
+@media (max-width: 480px) {
+  .season-meaning { font-size: 0.78rem; row-gap: 0.45rem; }
+  .season-meaning span:not(:last-child)::after { margin: 0 0.5rem; }
 }
 .spread-buttons {
   display: grid;
@@ -570,4 +640,39 @@ body {
     gap: 0.5rem;
   }
   .flip-all-btn, .interpret-btn { padding: 0.6rem 1.2rem; font-size: 0.82rem; }
+}
+
+/* ============================================================
+   四季牌阵独立页面（four-seasons-spread.html）专用样式
+   ============================================================ */
+
+/* 返回主站链接 */
+.back-link {
+  display: inline-block;
+  margin-bottom: 0.8rem;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.back-link:hover { color: var(--gold-light); }
+
+/* 未开放时的提示横幅 */
+.lock-banner {
+  display: none;
+  max-width: 900px;
+  margin: 0 auto 1.5rem;
+  padding: 0.9rem 1.2rem;
+  border: 1px solid var(--gold);
+  border-radius: 12px;
+  background: rgba(212,168,67,0.08);
+  color: var(--gold-light);
+  font-size: 0.92rem;
+  text-align: center;
+  line-height: 1.6;
+  animation: lockPulse 2.4s ease-in-out infinite;
+}
+@keyframes lockPulse {
+  0%, 100% { box-shadow: 0 0 6px rgba(212,168,67,0.15); }
+  50% { box-shadow: 0 0 16px rgba(212,168,67,0.35); }
 }
