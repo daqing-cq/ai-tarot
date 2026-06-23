@@ -13,9 +13,8 @@ let currentSpreadType = '';
 let flippedCount = 0;
 let totalCards = 0;
 
-// 四季牌阵今天是否开放（仅春分/夏至/秋分/冬至当天）
-let seasonAvailable = false;
-let seasonNextInfo = null;
+// 四季牌阵今天是否开放：不在此处缓存，改为点击悬浮按钮时实时查询
+// （需求是"点击后核实时间"，缓存的状态可能因为页面停留太久而过期）
 
 // 生成星星背景
 function generateStars() {
@@ -63,40 +62,40 @@ function startCountdown(resetTime, elementId) {
   countdownTimer = setInterval(update, 1000);
 }
 
-// 查询四季牌阵今天是否开放，并更新按钮的可点击状态与文案
-async function checkSeasonAvailability() {
-  const seasonBtn = document.getElementById('seasonBtn');
-  const seasonDesc = document.getElementById('seasonDesc');
+// ============================================================
+// 四季牌阵悬浮入口：点击时实时向后端核验"今天是不是二分二至"
+// 是 → 跳转到独立的 /four-seasons-spread 占卜页
+// 否 → 弹窗提示下次开放时间，不跳转
+// ============================================================
+document.getElementById('seasonFloatBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('seasonFloatBtn');
+  if (btn.disabled) return;
+  btn.disabled = true;
+
   try {
     const res = await fetch(`${API_BASE}/api/season-status`);
     const data = await res.json();
-    seasonAvailable = !!data.available;
-    seasonNextInfo = data.next || null;
 
-    if (seasonAvailable) {
-      seasonBtn.classList.remove('disabled');
-      seasonDesc.textContent = data.today ? `今日${data.today}，可占卜本季运势` : '现已开放';
-    } else {
-      seasonBtn.classList.add('disabled');
-      seasonDesc.textContent = seasonNextInfo
-        ? `下次开放：${seasonNextInfo.date}（${seasonNextInfo.label}）`
-        : '仅限春分·夏至·秋分·冬至';
+    if (data.available) {
+      window.location.href = '/four-seasons-spread';
+      return; // 即将跳转页面，不需要再恢复按钮状态
     }
+
+    const next = data.next;
+    alert(next
+      ? `四季牌阵今天还没开放，下次开放时间为 ${next.date}（${next.label}）`
+      : '四季牌阵今天还没开放，仅限春分、夏至、秋分、冬至这四天');
   } catch (err) {
-    // 查询失败不影响其他牌阵使用，只是四季牌阵按钮保持默认文案
     console.error('查询四季牌阵状态失败:', err);
+    alert('查询四季牌阵状态失败，请稍后重试');
+  } finally {
+    btn.disabled = false;
   }
-}
+});
 
 // 牌阵选择
 document.querySelectorAll('.spread-btn').forEach(btn => {
   btn.addEventListener('click', () => {
-    if (btn.dataset.spread === 'season' && !seasonAvailable) {
-      alert(seasonNextInfo
-        ? `四季牌阵今天还没开放，下次是 ${seasonNextInfo.date}（${seasonNextInfo.label}）`
-        : '四季牌阵只在春分、夏至、秋分、冬至这四天开放');
-      return;
-    }
     document.querySelectorAll('.spread-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     selectedSpread = btn.dataset.spread;
@@ -115,14 +114,6 @@ questionInput.addEventListener('input', () => {
 // ============================================================
 document.getElementById('divinationBtn').addEventListener('click', async () => {
   if (isLoading) return;
-
-  // 双重保险：即便按钮没被正确置灰，这里也再拦一次
-  if (selectedSpread === 'season' && !seasonAvailable) {
-    alert(seasonNextInfo
-      ? `四季牌阵今天还没开放，下次是 ${seasonNextInfo.date}（${seasonNextInfo.label}）`
-      : '四季牌阵只在春分、夏至、秋分、冬至这四天开放');
-    return;
-  }
 
   isLoading = true;
 
@@ -396,4 +387,3 @@ document.getElementById('resetBtn').addEventListener('click', () => {
 
 // 初始化
 generateStars();
-checkSeasonAvailability();
