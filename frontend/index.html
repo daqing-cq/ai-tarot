@@ -10,6 +10,12 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <!-- 四季牌阵悬浮入口：固定在右上角，随时可点；点击时实时核验今天是否为二分二至 -->
+  <button id="seasonFloatBtn" class="season-float-btn" type="button" title="四季牌阵 · 仅限春分·夏至·秋分·冬至">
+    <span class="season-float-icon">🧭</span>
+    <span class="season-float-text">四季牌阵</span>
+  </button>
+
   <!-- 星星背景 -->
   <div class="stars" id="stars"></div>
 
@@ -54,11 +60,6 @@
           <span class="spread-icon">🌟</span>
           <span class="spread-name">凯尔特十字</span>
           <span class="spread-desc">全面深度解析</span>
-        </button>
-        <button class="spread-btn" data-spread="season" id="seasonBtn">
-          <span class="spread-icon">🧭</span>
-          <span class="spread-name">四季牌阵</span>
-          <span class="spread-desc" id="seasonDesc">仅限春分·夏至·秋分·冬至</span>
         </button>
       </div>
     </section>
