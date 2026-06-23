@@ -239,7 +239,7 @@ app.post('/api/interpret', aiDailyLimiter, async (req, res) => {
 2. 结合所有牌的整体能量与关联
 3. 给出具体且有建设性的建议
 4. 语言富有诗意，但不要过于玄幻
-5. 全文（包含所有小节标题）严格控制在800字以内，避免内容被截断`;
+5. 全文（包含所有小节标题）控制在1000字左右，避免内容被截断`;
 
   // 四季牌阵有固定的花色→含义对应关系，需要单独告诉AI，否则它不知道这个牌阵的特殊规则
   const seasonContext = spreadType === 'season' ? `
@@ -349,7 +349,7 @@ ${seasonContext}
 
   } catch (error) {
     // ⚠️ 安全关键：只把错误记录到服务器日志，绝对不把原始错误发给前端
-    // 原始错误可能包含 API Key 的前四位和后四位（如 sk-ab12****yz89）
+    // 原始错误可能包含 API Key 的前四位和后四位（如 sk-****************）
     // 如果直接发给前端，用户可以在浏览器控制台或抓包工具中看到 Key 特征
     console.error('AI调用错误（仅服务端可见）:', error.message);
 
@@ -360,7 +360,9 @@ ${seasonContext}
 });
 
 // 静态文件（前端页面由 Express 托管）
-app.use(express.static('public'));
+// extensions:['html'] 让 /four-seasons-spread 这种"干净"网址
+// 自动映射到 public/four-seasons-spread.html，不用单独写路由
+app.use(express.static('public', { extensions: ['html'] }));
 
 // 启动服务
 app.listen(PORT, () => {
