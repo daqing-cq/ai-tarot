@@ -28,15 +28,17 @@ error: `你今日的占卜次数已用完（每24小时限${limit}次），请${
 ```
 ai-tarot/
 ├── backend/
-│   ├── server.js          # Express 主服务
-│   ├── tarot-data.js      # 78张塔罗牌数据
-│   ├── solar-terms.js     # 计算今年的春分/夏至/秋分/冬至具体日期
+│   ├── server.js                    # Express 主服务
+│   ├── tarot-data.js                # 78张塔罗牌数据
+│   ├── solar-terms.js               # 计算今年的春分/夏至/秋分/冬至具体日期
 │   ├── package.json
-│   └── .env               # 环境变量（API Key等）
+│   └── .env                         # 环境变量（API Key等）
 ├── frontend/
-│   ├── index.html         # 主页面
-│   ├── style.css          # 样式
-│   └── app.js             # 前端逻辑
+│   ├── index.html                   # 主页面
+│   ├── style.css                    # 样式
+│   └── app.js                       # 前端逻辑
+│   ├── four-seasons-spread.html     # 特殊牌阵(四季大阵)
+│   ├── four-seasons.js              # 四季大阵逻辑
 ├── Dockerfile
 ├── docker-compose.yml
 └── nginx.conf
