@@ -91,6 +91,167 @@ body {
   }
   .season-float-btn .season-float-text { display: none; }
 }
+
+/* ============================================================
+   选择牌阵：左上角悬浮按钮 + 滑出侧边栏
+   ============================================================ */
+.spread-select-btn {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1rem;
+  background: var(--glass-bg);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--purple-light);
+  border-radius: 999px;
+  color: var(--gold-light);
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 0 12px rgba(168,85,247,0.25);
+}
+.spread-select-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 18px rgba(168,85,247,0.45);
+}
+.spread-select-icon { font-size: 1.1rem; }
+
+@media (max-width: 600px) {
+  .spread-select-btn {
+    padding: 0.55rem;
+    top: 0.7rem;
+    left: 0.7rem;
+  }
+  .spread-select-btn .spread-select-text { display: none; }
+}
+
+/* 遮罩层：点击可关闭侧边栏 */
+.spread-sidebar-overlay {
+  position: fixed; inset: 0;
+  background: rgba(5,2,12,0.6);
+  backdrop-filter: blur(2px);
+  z-index: 199;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+.spread-sidebar-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* 侧边栏面板：默认收在视口左侧外面，加 .open 后滑入 */
+.spread-sidebar {
+  position: fixed;
+  top: 0; left: 0;
+  height: 100vh;
+  width: min(86vw, 360px);
+  background: linear-gradient(180deg, #150a28, #0a0612);
+  border-right: 1px solid var(--glass-border);
+  box-shadow: 8px 0 40px rgba(0,0,0,0.5);
+  z-index: 200;
+  transform: translateX(-100%);
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+.spread-sidebar.open { transform: translateX(0); }
+
+.spread-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.2rem 1.2rem 1rem;
+  border-bottom: 1px solid var(--glass-border);
+  flex-shrink: 0;
+}
+.spread-sidebar-header h3 {
+  font-size: 1.05rem;
+  color: var(--gold-light);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.spread-sidebar-close {
+  background: transparent;
+  border: 1px solid var(--glass-border);
+  border-radius: 50%;
+  width: 32px; height: 32px;
+  color: var(--text-muted);
+  font-size: 1rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.spread-sidebar-close:hover {
+  border-color: var(--gold);
+  color: var(--gold-light);
+}
+
+.spread-sidebar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 1rem;
+}
+.spread-sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.8rem 0.9rem;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  color: var(--text-main);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.25s;
+}
+.spread-sidebar-item:hover {
+  border-color: var(--gold);
+  background: rgba(212,168,67,0.08);
+  transform: translateX(3px);
+}
+.spread-sidebar-item.active {
+  border-color: var(--gold);
+  background: rgba(212,168,67,0.14);
+  box-shadow: 0 0 14px rgba(212,168,67,0.2);
+}
+.spread-sidebar-item-icon { font-size: 1.5rem; flex-shrink: 0; }
+.spread-sidebar-item-text { display: flex; flex-direction: column; gap: 0.15rem; }
+.spread-sidebar-item-name { font-size: 0.92rem; font-weight: 600; color: var(--gold-light); }
+.spread-sidebar-item-desc { font-size: 0.72rem; color: var(--text-muted); }
+
+/* "当前牌阵"只读展示卡片：真正的切换入口是左上角按钮 + 侧边栏 */
+.current-spread-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  max-width: 260px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem;
+  background: var(--glass-bg);
+  border: 1px solid var(--gold);
+  border-radius: 12px;
+  box-shadow: 0 0 20px rgba(212,168,67,0.2);
+}
+.current-spread-icon { font-size: 2rem; }
+.current-spread-name { font-size: 1.05rem; font-weight: 600; color: var(--gold-light); }
+.current-spread-desc { font-size: 0.8rem; color: var(--text-muted); }
+.spread-switch-hint {
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 0.8rem;
+}
 .logo {
   font-size: 4rem;
   animation: float 4s ease-in-out infinite;
@@ -206,36 +367,7 @@ body {
   .season-meaning { font-size: 0.78rem; row-gap: 0.45rem; }
   .season-meaning span:not(:last-child)::after { margin: 0 0.5rem; }
 }
-.spread-buttons {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-}
-.spread-btn {
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  border-radius: 12px;
-  padding: 1.5rem 1rem;
-  cursor: pointer;
-  transition: all 0.3s;
-  display: flex; flex-direction: column;
-  align-items: center; gap: 0.4rem;
-  color: var(--text-main);
-  font-family: inherit;
-}
-.spread-btn:hover {
-  border-color: var(--gold);
-  background: rgba(212,168,67,0.1);
-  transform: translateY(-2px);
-}
-.spread-btn.active {
-  border-color: var(--gold);
-  background: rgba(212,168,67,0.12);
-  box-shadow: 0 0 20px rgba(212,168,67,0.2);
-}
-.spread-icon { font-size: 2rem; }
-.spread-name { font-size: 1rem; font-weight: 600; color: var(--gold-light); }
-.spread-desc { font-size: 0.78rem; color: var(--text-muted); }
+
 
 /* 占卜按钮 */
 .divination-btn-container { text-align: center; margin-bottom: 3rem; }
@@ -433,7 +565,7 @@ body {
 
 /* 响应式 */
 @media (max-width: 600px) {
-  .spread-buttons { grid-template-columns: 1fr; }
+
   .cards-grid { grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); }
   .tarot-card { width: 110px; padding: 0.8rem 0.5rem; }
 }
@@ -614,16 +746,144 @@ body {
 .layout-season .pos-3 .card-back { background: linear-gradient(135deg, #16301a, #2f6b2f); } /* 星币·土 */
 .layout-season .pos-4 .card-back { background: linear-gradient(135deg, #1a0b30, #5a1fa0); } /* 大阿卡纳 */
 
-/* 牌阵按钮被禁用（比如四季牌阵今天未开放）时的样式 */
-.spread-btn.disabled {
-  opacity: 0.45;
-  filter: grayscale(0.5);
+/* 大十字 / 正五芒星 专属：未能推算出第5张指示牌时的提示文案 */
+.indicator-note {
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--gold-light);
+  background: rgba(212,168,67,0.08);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  padding: 0.6rem 1rem;
+  margin: 0 auto 1.2rem;
+  max-width: 480px;
+  line-height: 1.6;
 }
-.spread-btn.disabled:hover {
-  border-color: var(--glass-border);
-  background: var(--glass-bg);
-  transform: none;
+
+/* ============================================================
+   新增6个牌阵的专属布局
+   ============================================================ */
+
+/* 大十字：十字形，左右是"影响因素"，上是"原因"，下是"解决方案"，
+   中间是由前4张牌数字总和推算出的"结果"（Indicator） */
+.cards-grid.layout-cross {
+  display: grid;
+  grid-template-columns: repeat(3, 140px);
+  grid-template-rows: repeat(3, 220px);
+  grid-template-areas:
+    ".    up     ."
+    "left center right"
+    ".    down   .";
+  gap: 1rem;
+  justify-content: center;
 }
+.layout-cross .pos-0 { grid-area: left; }   /* 影响问题的因素（左） */
+.layout-cross .pos-1 { grid-area: right; }  /* 影响问题的因素（右） */
+.layout-cross .pos-2 { grid-area: up; }     /* 产生问题的原因 */
+.layout-cross .pos-3 { grid-area: down; }   /* 问题的解决方向或方案 */
+.layout-cross .pos-4 { grid-area: center; } /* 结果（Indicator） */
+
+/* 正五芒星：5个点按五角星排布，中心叠加一个星形连线作装饰背景。
+   顶点同样由前4张牌数字总和推算出"启示"牌（Indicator） */
+.cards-grid.layout-pentagram {
+  position: relative;
+  width: 560px;
+  max-width: 94vw;
+  height: 620px;
+  margin: 0 auto;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpolygon points='50,22 72.34,78 13.86,42 86.14,42 27.66,78' fill='none' stroke='rgba(212,168,67,0.35)' stroke-width='0.6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+}
+.layout-pentagram .card-slot { position: absolute; }
+.layout-pentagram .pos-0 { left: calc(27.66% - 70px); top: calc(78% - 110px); } /* 约束（左下） */
+.layout-pentagram .pos-1 { left: calc(86.14% - 70px); top: calc(42% - 110px); } /* 处理态度（右上） */
+.layout-pentagram .pos-2 { left: calc(13.86% - 70px); top: calc(42% - 110px); } /* 引发的问题（左上） */
+.layout-pentagram .pos-3 { left: calc(72.34% - 70px); top: calc(78% - 110px); } /* 事件结果（右下） */
+.layout-pentagram .pos-4 { left: calc(50% - 70px); top: calc(22% - 110px); }    /* 启示 · Indicator（顶部） */
+
+/* 选择二选一：左右两列分别对应A/B选项，"现在的状态"居中靠下 */
+.cards-grid.layout-choice {
+  display: grid;
+  grid-template-columns: repeat(3, 140px);
+  grid-template-rows: repeat(3, 220px);
+  grid-template-areas:
+    "futureA .   futureB"
+    "nowA    .   nowB"
+    ".       now .";
+  gap: 1rem;
+  justify-content: center;
+}
+.layout-choice .pos-0 { grid-area: now; }     /* 现在的状态 */
+.layout-choice .pos-1 { grid-area: nowA; }    /* 选择A的现状 */
+.layout-choice .pos-2 { grid-area: futureA; } /* 选择A的未来发展 */
+.layout-choice .pos-3 { grid-area: nowB; }    /* 选择B的现状 */
+.layout-choice .pos-4 { grid-area: futureB; } /* 选择B的未来发展 */
+
+/* 爱情十字：指引牌与"你的心理状况"并列在上方，
+   中间一排是现状/结果/发展，"对方态度"在下方居中 */
+.cards-grid.layout-loveCross {
+  display: grid;
+  grid-template-columns: repeat(3, 140px);
+  grid-template-rows: repeat(3, 220px);
+  grid-template-areas:
+    "guide   now     ."
+    "current result  devel"
+    ".       partner .";
+  gap: 1rem;
+  justify-content: center;
+}
+.layout-loveCross .pos-0 { grid-area: guide; }   /* 指引牌 */
+.layout-loveCross .pos-1 { grid-area: now; }     /* 你的心理状况 */
+.layout-loveCross .pos-2 { grid-area: current; } /* 现状 */
+.layout-loveCross .pos-3 { grid-area: result; }  /* 结果 */
+.layout-loveCross .pos-4 { grid-area: devel; }   /* 人、事、物的发展情况 */
+.layout-loveCross .pos-5 { grid-area: partner; } /* 对方态度 */
+
+/* 未来恋人：指引牌居上，下方左右两列依次展开"类型/出现/阻力/相处"，
+   "怎样才能遇到他/她"收尾居中 */
+.cards-grid.layout-futureLover {
+  display: grid;
+  grid-template-columns: repeat(3, 140px);
+  grid-template-rows: repeat(4, 220px);
+  grid-template-areas:
+    ".    guide .  "
+    "c1   .     c2"
+    "c3   .     c4"
+    ".    c5    .  ";
+  gap: 1rem;
+  justify-content: center;
+}
+.layout-futureLover .pos-0 { grid-area: guide; } /* 指引牌 */
+.layout-futureLover .pos-1 { grid-area: c1; }    /* 他/她是什么类型 */
+.layout-futureLover .pos-2 { grid-area: c2; }    /* 他/她已经出现了吗 */
+.layout-futureLover .pos-3 { grid-area: c3; }    /* 遇到的阻力 */
+.layout-futureLover .pos-4 { grid-area: c4; }    /* 相处模式 */
+.layout-futureLover .pos-5 { grid-area: c5; }    /* 怎样才能遇到他/她 */
+
+/* 满月之旅：男女双方指示牌分居两侧，"这段感情预示的结果"居中靠上，
+   往下依次是双方的不安、做错的事/未来该做的事/需要思考的事，最后"自己的状态"收尾 */
+.cards-grid.layout-fullMoon {
+  display: grid;
+  grid-template-columns: repeat(3, 140px);
+  grid-template-rows: repeat(4, 220px);
+  grid-template-areas:
+    "guideMale  outcome guideFemale"
+    "maleWorry  .       femaleWorry"
+    "didWrong   future  shouldThink"
+    ".          self    .";
+  gap: 1rem;
+  justify-content: center;
+}
+.layout-fullMoon .pos-0 { grid-area: guideMale; }    /* 男方指示牌 */
+.layout-fullMoon .pos-1 { grid-area: outcome; }      /* 这段感情预示的结果 */
+.layout-fullMoon .pos-2 { grid-area: guideFemale; }  /* 女方指示牌 */
+.layout-fullMoon .pos-3 { grid-area: maleWorry; }    /* 男方心里的不安 */
+.layout-fullMoon .pos-4 { grid-area: femaleWorry; }  /* 女方心里的不安 */
+.layout-fullMoon .pos-5 { grid-area: didWrong; }     /* 双方做过了什么/做错了什么 */
+.layout-fullMoon .pos-6 { grid-area: future; }       /* 未来应该做什么 */
+.layout-fullMoon .pos-7 { grid-area: shouldThink; }  /* 需要思考什么/不理智的是什么 */
+.layout-fullMoon .pos-8 { grid-area: self; }         /* 自己的状态 */
 
 /* 响应式：手机上缩小卡牌与网格尺寸，避免横向溢出 */
 @media (max-width: 600px) {
@@ -639,6 +899,41 @@ body {
     grid-template-rows: repeat(3, 150px);
     gap: 0.5rem;
   }
+  .cards-grid.layout-cross {
+    grid-template-columns: repeat(3, 92px);
+    grid-template-rows: repeat(3, 150px);
+    gap: 0.5rem;
+  }
+  .cards-grid.layout-choice {
+    grid-template-columns: repeat(3, 92px);
+    grid-template-rows: repeat(3, 150px);
+    gap: 0.5rem;
+  }
+  .cards-grid.layout-loveCross {
+    grid-template-columns: repeat(3, 92px);
+    grid-template-rows: repeat(3, 150px);
+    gap: 0.5rem;
+  }
+  .cards-grid.layout-futureLover {
+    grid-template-columns: repeat(3, 92px);
+    grid-template-rows: repeat(4, 150px);
+    gap: 0.5rem;
+  }
+  .cards-grid.layout-fullMoon {
+    grid-template-columns: repeat(3, 92px);
+    grid-template-rows: repeat(4, 150px);
+    gap: 0.5rem;
+  }
+  .cards-grid.layout-pentagram {
+    width: 350px;
+    max-width: 92vw;
+    height: 400px;
+  }
+  .layout-pentagram .pos-0 { left: calc(27.66% - 46px); top: calc(78% - 75px); }
+  .layout-pentagram .pos-1 { left: calc(86.14% - 46px); top: calc(42% - 75px); }
+  .layout-pentagram .pos-2 { left: calc(13.86% - 46px); top: calc(42% - 75px); }
+  .layout-pentagram .pos-3 { left: calc(72.34% - 46px); top: calc(78% - 75px); }
+  .layout-pentagram .pos-4 { left: calc(50% - 46px); top: calc(22% - 75px); }
   .flip-all-btn, .interpret-btn { padding: 0.6rem 1.2rem; font-size: 0.82rem; }
 }
 
@@ -675,4 +970,19 @@ body {
 @keyframes lockPulse {
   0%, 100% { box-shadow: 0 0 6px rgba(212,168,67,0.15); }
   50% { box-shadow: 0 0 16px rgba(212,168,67,0.35); }
+}
+
+/*隐藏侧边选择牌阵的滚动条*/
+.spread-sidebar-list {
+    overflow-y: auto;
+
+    /* Firefox */
+    scrollbar-width: none;
+
+    /* IE */
+    -ms-overflow-style: none;
+}
+
+.spread-sidebar-list::-webkit-scrollbar {
+    display: none;
 }
