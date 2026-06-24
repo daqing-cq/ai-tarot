@@ -3,8 +3,17 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-const { drawCards, drawSeasonCards, getSpreadPositions } = require('./tarot-data');
+const { drawCards, drawSeasonCards, getSpreadPositions, drawIndicatorSpread } = require('./tarot-data');
 const { getTodaySolarTerm, getNextSolarTerm } = require('./solar-terms');
+
+// ===== 正五芒星：仅限北京时间 23:00 ~ 次日 02:00 之间使用 =====
+// 传说五芒星阵需要在午夜时分（亥时三刻至丑时）使用，能量才足够强
+// now 参数仅用于单元测试时传入自定义时间，正常调用不需要传
+function isPentagramTimeAvailable(now = new Date()) {
+  const bjHour = new Date(now.getTime() + 8 * 3600 * 1000).getUTCHours();
+  // 23点台（23:00-23:59）或 凌晨0点、1点台（00:00-01:59）都算开放时段
+  return bjHour >= 23 || bjHour < 2;
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -181,10 +190,13 @@ app.get('/api/season-status', (req, res) => {
 // 抽牌接口（不限次数，抽牌不消耗 AI 配额）
 app.post('/api/draw', (req, res) => {
   const { spreadType = 'three' } = req.body;
-  const validSpreads = ['single', 'three', 'celtic', 'season'];
+  const validSpreads = [
+    'single', 'three', 'celtic', 'season',
+    'cross', 'pentagram', 'choice', 'loveCross', 'futureLover', 'fullMoon'
+  ];
 
   if (!validSpreads.includes(spreadType)) {
-    return res.status(400).json({ error: '无效的牌阵类型，仅支持 single / three / celtic / season' });
+    return res.status(400).json({ error: `无效的牌阵类型，仅支持 ${validSpreads.join(' / ')}` });
   }
 
   // 四季牌阵：仅限春分/夏至/秋分/冬至当天（北京时间）开放
@@ -200,11 +212,38 @@ app.post('/api/draw', (req, res) => {
     }
   }
 
-  const countMap = { single: 1, three: 3, celtic: 10 };
-  const cards = spreadType === 'season' ? drawSeasonCards() : drawCards(countMap[spreadType]);
-  const positions = getSpreadPositions(spreadType);
+  // 正五芒星：仅限北京时间 23:00 ~ 次日 02:00 之间使用
+  if (spreadType === 'pentagram' && !isPentagramTimeAvailable()) {
+    return res.status(403).json({
+      error: '正五芒星牌阵只在午夜时分（北京时间 23:00 ~ 次日 02:00）开放，现在还不是这个时段，请在午夜再来 🌙'
+    });
+  }
 
-  res.json({ cards, positions, spreadType });
+  // 普通牌阵的牌数对照表（大十字 / 正五芒星 不在此列，走下方专属逻辑）
+  const countMap = { single: 1, three: 3, celtic: 10, choice: 5, loveCross: 6, futureLover: 6, fullMoon: 9 };
+  const indicatorSpreads = ['cross', 'pentagram'];
+
+  let cards;
+  let indicatorMissed = false;
+
+  if (spreadType === 'season') {
+    cards = drawSeasonCards();
+  } else if (indicatorSpreads.includes(spreadType)) {
+    // 大十字 / 正五芒星：第5张"指示牌"由前4张牌的数字总和推算得出，并非随机抽取
+    const result = drawIndicatorSpread();
+    cards = result.cards;
+    indicatorMissed = result.indicatorMissed;
+  } else {
+    cards = drawCards(countMap[spreadType] || 3);
+  }
+
+  // 没能推算出第5张指示牌时，只取前4个位置标签，与实际牌数对应
+  let positions = getSpreadPositions(spreadType);
+  if (indicatorMissed) {
+    positions = positions.slice(0, cards.length);
+  }
+
+  res.json({ cards, positions, spreadType, indicatorMissed });
 });
 
 // AI 解读接口（SSE 流式输出）
@@ -228,7 +267,13 @@ app.post('/api/interpret', aiDailyLimiter, async (req, res) => {
     single: '单张',
     three: '三张时间轴',
     celtic: '凯尔特十字',
-    season: '四季'
+    season: '四季',
+    cross: '大十字',
+    pentagram: '正五芒星',
+    choice: '选择二选一',
+    loveCross: '爱情十字',
+    futureLover: '未来恋人',
+    fullMoon: '满月之旅'
   }[spreadType] || '未知';
 
   // AI 系统提示词（占卜师人设）
@@ -254,12 +299,29 @@ app.post('/api/interpret', aiDailyLimiter, async (req, res) => {
 - 大阿卡纳牌（中）：是整个季度的关键点，代表能量与灵性成长，以及需要学习和关注的地方，并影响着整个牌阵
 请先逐张按上述对应关系解读，再综合大阿卡纳牌点出的关键主题，给出本季度的整体建议。` : '';
 
+  // 大十字 / 正五芒星：第5张牌（结果/启示）并非随机抽取，而是由前4张牌的数字总和换算出的
+  // 大阿卡纳牌，需要单独告诉AI这一层"由前因汇聚而成的天意"的特殊含义
+  const indicatorContext = (spreadType === 'cross' || spreadType === 'pentagram') ? (
+    cards.length >= 5
+      ? `
+
+【${spreadType === 'cross' ? '大十字' : '正五芒星'}牌阵专属规则，请严格按此解读】
+最后一张牌"${(positions[4] || positions[positions.length - 1])}"并非随机抽取，而是由前4张牌各自的数字总和换算出的对应大阿卡纳牌，
+象征着精灵的祝福与天意的指引。请在解读中点出"这是由前面四张牌的因果自然汇聚而成的结果/启示"这一层意味，
+而不要把它当作一张普通的随机牌来解读。`
+      : `
+
+【${spreadType === 'cross' ? '大十字' : '正五芒星'}牌阵专属规则，请严格按此解读】
+本次按规则推算出的第5张指示牌恰好与前4张中的某一张重复，按此牌阵的规则，这意味着本次没有获得额外的指引/祝福，
+只抽到了4张牌。请仅围绕这4张牌本身的因果关系进行解读，不要编造或假设一张并不存在的第5张牌。`
+  ) : '';
+
   // 用户提示词（包含牌面信息）
   const userPrompt = `问卜者的问题：${question || '请为我进行综合占卜'}
 
 抽到的牌面（${spreadLabel}牌阵）：
 ${cardDescriptions}
-${seasonContext}
+${seasonContext}${indicatorContext}
 
 请对以上塔罗牌进行深入解读，给出完整的占卜结果和人生建议。`;
 
