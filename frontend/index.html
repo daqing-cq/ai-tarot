@@ -16,6 +16,24 @@
     <span class="season-float-text">四季牌阵</span>
   </button>
 
+  <!-- 选择牌阵入口：固定在左上角，点击后从左侧滑出牌阵选择侧边栏 -->
+  <button id="spreadSelectBtn" class="spread-select-btn" type="button" title="选择牌阵">
+    <span class="spread-select-icon">🃏</span>
+    <span class="spread-select-text">选择牌阵</span>
+  </button>
+
+  <!-- 选择牌阵侧边栏：遮罩 + 滑出面板 -->
+  <div class="spread-sidebar-overlay" id="spreadSidebarOverlay"></div>
+  <aside class="spread-sidebar" id="spreadSidebar" aria-hidden="true">
+    <div class="spread-sidebar-header">
+      <h3>🔮 选择牌阵</h3>
+      <button class="spread-sidebar-close" id="spreadSidebarClose" type="button" aria-label="关闭">✕</button>
+    </div>
+    <div class="spread-sidebar-list" id="spreadSidebarList">
+      <!-- 由 app.js 动态生成牌阵列表 -->
+    </div>
+  </aside>
+
   <!-- 星星背景 -->
   <div class="stars" id="stars"></div>
 
@@ -42,26 +60,13 @@
       <div class="char-count"><span id="charCount">0</span>/200</div>
     </section>
 
-    <!-- 牌阵选择 -->
+    <!-- 当前牌阵展示：默认显示"时间三张"，实际切换通过左上角"选择牌阵"侧边栏完成 -->
     <section class="spread-section">
-      <h2>🃏 选择牌阵</h2>
-      <div class="spread-buttons">
-        <button class="spread-btn active" data-spread="single">
-          <span class="spread-icon">🌙</span>
-          <span class="spread-name">单张牌</span>
-          <span class="spread-desc">快速洞察当下</span>
-        </button>
-        <button class="spread-btn" data-spread="three">
-          <span class="spread-icon">⭐</span>
-          <span class="spread-name">时间三张</span>
-          <span class="spread-desc">过去·现在·未来</span>
-        </button>
-        <button class="spread-btn" data-spread="celtic">
-          <span class="spread-icon">🌟</span>
-          <span class="spread-name">凯尔特十字</span>
-          <span class="spread-desc">全面深度解析</span>
-        </button>
+      <h2>🃏 当前牌阵</h2>
+      <div class="current-spread-card" id="currentSpreadCard">
+        <!-- 由 app.js 动态填充：图标 / 名称 / 简介 -->
       </div>
+      <p class="spread-switch-hint">点击左上角「🃏 选择牌阵」可更换为其他牌阵</p>
     </section>
 
     <!-- 开始占卜按钮 -->
@@ -76,6 +81,7 @@
     <section class="cards-section" id="cardsSection" style="display:none">
       <h2 class="section-title">🌟 命运之牌</h2>
       <p class="flip-hint" id="flipHint">🔮 轻触卡牌，揭开命运的面纱</p>
+      <p class="indicator-note" id="indicatorNote" style="display:none"></p>
       <div class="cards-grid" id="cardsGrid"></div>
       <div class="cards-actions">
         <button id="flipAllBtn" class="flip-all-btn">✨ 翻开全部</button>
