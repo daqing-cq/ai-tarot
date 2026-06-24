@@ -263,9 +263,101 @@ function getSpreadPositions(spreadType) {
       "右 · 宝剑 · 思维与人际",
       "上 · 星币 · 物质与健康",
       "中 · 大阿卡纳 · 本季关键与灵性成长"
+    ],
+    // 大十字：第5张"结果"牌由前4张牌的数字总和推算得出（见下方 drawIndicatorSpread）
+    cross: [
+      "影响问题的因素（左）",
+      "影响问题的因素（右）",
+      "产生问题的原因",
+      "问题的解决方向或方案",
+      "结果（精灵的指引 · Indicator）"
+    ],
+    // 正五芒星：第5张"启示"牌同样由前4张牌的数字总和推算得出
+    pentagram: [
+      "约束",
+      "处理态度",
+      "引发的问题",
+      "事件结果",
+      "启示（精灵的祝福 · Indicator）"
+    ],
+    choice: [
+      "现在的状态",
+      "选择A的现状",
+      "选择A的未来发展",
+      "选择B的现状",
+      "选择B的未来发展"
+    ],
+    loveCross: [
+      "指引牌",
+      "你的心理状况",
+      "现状",
+      "结果",
+      "人、事、物的发展情况",
+      "对方态度"
+    ],
+    futureLover: [
+      "指引牌",
+      "他/她是什么类型",
+      "他/她已经出现了吗",
+      "遇到的阻力",
+      "相处模式",
+      "怎样才能遇到他/她"
+    ],
+    fullMoon: [
+      "男方指示牌",
+      "这段感情预示的结果",
+      "女方指示牌",
+      "男方心里的不安",
+      "女方心里的不安",
+      "双方做过了什么/做错了什么",
+      "未来应该做什么",
+      "需要思考什么/不理智的是什么",
+      "自己的状态"
     ]
   };
   return spreads[spreadType] || spreads.single;
 }
 
-module.exports = { tarotCards, drawCards, drawSeasonCards, getSpreadPositions };
+// ============================================================
+// 大十字 / 正五芒星 专用：第5张"指示牌"不是随机抽取的，
+// 而是由前4张牌各自的数字总和推算出对应的大阿卡纳牌
+// ============================================================
+
+// 数字对照：大阿卡纳直接用其编号(0-21)；小阿卡纳按"权杖/圣杯/宝剑/星币"
+// 各自牌组内的顺序换算为1-14（Ace=1 ... 十=10，侍从=11，骑士=12，皇后=13，国王=14）
+function getCardNumerologyValue(card) {
+  if (card.suit === 'major') return card.id;
+  const suitStartId = { wands: 22, cups: 36, swords: 50, pentacles: 64 }[card.suit];
+  return ((card.id - suitStartId) % 14) + 1;
+}
+
+// 把总和换算到 0-21 区间内对应的大阿卡纳编号：
+// 超出21就把十位和个位数字再相加一次，循环直到落入 0-21（通常一次就够）
+function reduceSumToMajorIndex(sum) {
+  let n = sum;
+  while (n > 21) {
+    n = Math.floor(n / 10) + (n % 10);
+  }
+  return n;
+}
+
+// 大十字 / 正五芒星 通用抽牌逻辑：
+// 1. 先正常抽4张牌（不限花色）
+// 2. 计算这4张牌数字总和，推算出对应的大阿卡纳作为第5张"指示牌"
+// 3. 如果推算出的指示牌与前4张中任意一张重复，则视为没有得到指引/祝福，仅返回4张
+function drawIndicatorSpread() {
+  const base = drawCards(4);
+  const sum = base.reduce((acc, c) => acc + getCardNumerologyValue(c), 0);
+  const majorIndex = reduceSumToMajorIndex(sum);
+  const majorCard = tarotCards.find(c => c.suit === 'major' && c.id === majorIndex);
+
+  const isDuplicate = base.some(c => c.id === majorCard.id);
+  if (isDuplicate) {
+    return { cards: base, indicatorMissed: true };
+  }
+
+  const indicatorCard = { ...majorCard, isReversed: Math.random() > 0.5 };
+  return { cards: [...base, indicatorCard], indicatorMissed: false };
+}
+
+module.exports = { tarotCards, drawCards, drawSeasonCards, getSpreadPositions, drawIndicatorSpread };
