@@ -1,7 +1,21 @@
 // API 地址（自动读取当前域名，无需修改）
 const API_BASE = window.location.origin;
 
-let selectedSpread = 'single';
+// 所有可在侧边栏选择的牌阵配置（四季牌阵走右上角独立入口，不在此列表里）
+// icon / name / desc 同时用于"当前牌阵"展示卡片与侧边栏列表
+const SPREADS = [
+  { key: 'single',      icon: '🌙', name: '单张牌',     desc: '快速洞察当下' },
+  { key: 'three',       icon: '⭐', name: '时间三张',   desc: '过去·现在·未来' },
+  { key: 'choice',      icon: '⚖️', name: '选择二选一', desc: '二选一，看清两条路' },
+  { key: 'cross',       icon: '➕', name: '大十字',     desc: '剖析问题成因与解法' },
+  { key: 'loveCross',   icon: '💕', name: '爱情十字',   desc: '梳理现有恋情的启发' },
+  { key: 'futureLover', icon: '💘', name: '未来恋人',   desc: '预见下一段缘分的样子' },
+  { key: 'fullMoon',    icon: '🌝', name: '满月之旅',   desc: '爱情ICU·复合与去留指引' },
+  { key: 'celtic',      icon: '🌟', name: '凯尔特十字', desc: '全面深度解析' },
+  { key: 'pentagram',   icon: '⛤', name: '正五芒星',   desc: '揭示事件的真相·23:00-2:00开放' },
+];
+
+let selectedSpread = 'three';
 let isLoading = false;        // 抽牌请求锁
 let isInterpreting = false;   // AI解读请求锁
 let countdownTimer = null;    // 倒计时定时器
@@ -93,14 +107,63 @@ document.getElementById('seasonFloatBtn').addEventListener('click', async () => 
   }
 });
 
-// 牌阵选择
-document.querySelectorAll('.spread-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.spread-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    selectedSpread = btn.dataset.spread;
+// ============================================================
+// 牌阵选择：左上角按钮打开侧边栏，侧边栏里选一个牌阵后
+// 主页面"当前牌阵"展示卡片随之切换，无需刷新页面
+// ============================================================
+
+// 渲染"当前牌阵"展示卡片（只读展示，真正的切换入口是侧边栏）
+function renderCurrentSpreadCard() {
+  const spread = SPREADS.find(s => s.key === selectedSpread) || SPREADS[1];
+  const card = document.getElementById('currentSpreadCard');
+  card.innerHTML = `
+    <span class="current-spread-icon">${spread.icon}</span>
+    <span class="current-spread-name">${spread.name}</span>
+    <span class="current-spread-desc">${spread.desc}</span>
+  `;
+}
+
+// 渲染侧边栏里的牌阵列表（每次打开时重新渲染，确保高亮当前选中项）
+function renderSpreadSidebarList() {
+  const list = document.getElementById('spreadSidebarList');
+  list.innerHTML = '';
+
+  SPREADS.forEach(spread => {
+    const item = document.createElement('button');
+    item.type = 'button';
+    item.className = 'spread-sidebar-item' + (spread.key === selectedSpread ? ' active' : '');
+    item.innerHTML = `
+      <span class="spread-sidebar-item-icon">${spread.icon}</span>
+      <span class="spread-sidebar-item-text">
+        <span class="spread-sidebar-item-name">${spread.name}</span>
+        <span class="spread-sidebar-item-desc">${spread.desc}</span>
+      </span>
+    `;
+    item.addEventListener('click', () => {
+      selectedSpread = spread.key;
+      renderCurrentSpreadCard();
+      closeSpreadSidebar();
+    });
+    list.appendChild(item);
   });
-});
+}
+
+function openSpreadSidebar() {
+  renderSpreadSidebarList();
+  document.getElementById('spreadSidebarOverlay').classList.add('open');
+  document.getElementById('spreadSidebar').classList.add('open');
+  document.getElementById('spreadSidebar').setAttribute('aria-hidden', 'false');
+}
+
+function closeSpreadSidebar() {
+  document.getElementById('spreadSidebarOverlay').classList.remove('open');
+  document.getElementById('spreadSidebar').classList.remove('open');
+  document.getElementById('spreadSidebar').setAttribute('aria-hidden', 'true');
+}
+
+document.getElementById('spreadSelectBtn').addEventListener('click', openSpreadSidebar);
+document.getElementById('spreadSidebarClose').addEventListener('click', closeSpreadSidebar);
+document.getElementById('spreadSidebarOverlay').addEventListener('click', closeSpreadSidebar);
 
 // 字数统计
 const questionInput = document.getElementById('questionInput');
@@ -126,6 +189,7 @@ document.getElementById('divinationBtn').addEventListener('click', async () => {
   interpSection.style.display = 'none';
   document.getElementById('interpretationText').textContent = '';
   document.getElementById('resetBtn').style.display = 'none';
+  document.getElementById('indicatorNote').style.display = 'none';
   if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
 
   try {
@@ -139,13 +203,22 @@ document.getElementById('divinationBtn').addEventListener('click', async () => {
       const errData = await drawRes.json().catch(() => ({}));
       throw new Error(errData.error || '抽牌失败，请刷新页面重试');
     }
-    const { cards, positions, spreadType } = await drawRes.json();
+    const { cards, positions, spreadType, indicatorMissed } = await drawRes.json();
 
     currentCards = cards;
     currentPositions = positions;
     currentSpreadType = spreadType;
 
     renderFaceDownCards(cards, positions, spreadType);
+
+    // 大十字 / 正五芒星 专属：没能推算出第5张指示牌时，提示用户本次只有4张牌
+    const note = document.getElementById('indicatorNote');
+    if (indicatorMissed) {
+      note.textContent = '🌙 本次推算出的指示牌与前4张中的一张重复，未能获得额外的指引/祝福，将仅以这4张牌的因果关系为你解读。';
+      note.style.display = 'block';
+    } else {
+      note.style.display = 'none';
+    }
 
   } catch (err) {
     console.error(err);
@@ -369,6 +442,7 @@ document.getElementById('resetBtn').addEventListener('click', () => {
   document.getElementById('cardsSection').style.display = 'none';
   document.getElementById('interpretationSection').style.display = 'none';
   document.getElementById('resetBtn').style.display = 'none';
+  document.getElementById('indicatorNote').style.display = 'none';
   document.getElementById('interpretationText').textContent = '';
   document.getElementById('cardsGrid').innerHTML = '';
 
@@ -387,3 +461,4 @@ document.getElementById('resetBtn').addEventListener('click', () => {
 
 // 初始化
 generateStars();
+renderCurrentSpreadCard();
