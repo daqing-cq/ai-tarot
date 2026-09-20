@@ -19,8 +19,28 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ===== 中间件 =====
-app.use(helmet());
-app.use(express.json());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:"],
+      connectSrc: ["'self'"],
+      frameAncestors: ["'none'"],
+      upgradeInsecureRequests: [],
+    },
+  },
+  crossOriginEmbedderPolicy: false,
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true,
+  },
+}));
+
+app.use(express.json({ limit: '100kb' }));
 app.use(cors({
   origin: process.env.ALLOWED_ORIGIN || '*',
   methods: ['GET', 'POST'],
@@ -255,6 +275,38 @@ app.post('/api/interpret', aiDailyLimiter, async (req, res) => {
     return res.status(400).json({ error: '缺少牌面数据' });
   }
 
+  // 校验牌阵类型
+  const validSpreads = [
+    'single', 'three', 'celtic', 'season',
+    'cross', 'pentagram', 'choice', 'loveCross', 'futureLover', 'fullMoon'
+  ];
+  if (!validSpreads.includes(spreadType)) {
+    return res.status(400).json({ error: '无效的牌阵类型' });
+  }
+
+  // 校验牌面数据：防止客户端伪造超大或畸形数据
+  if (cards.length > 22) {
+    return res.status(400).json({ error: '牌面数据异常' });
+  }
+  for (const card of cards) {
+    if (!card || typeof card !== 'object' || !Number.isInteger(card.id)) {
+      return res.status(400).json({ error: '牌面数据异常' });
+    }
+  }
+
+  // 校验问题长度
+  const MAX_QUESTION_LEN = 200;
+  const rawQuestion = typeof question === 'string' ? question.trim() : '';
+  if (rawQuestion.length > MAX_QUESTION_LEN) {
+    return res.status(400).json({ error: `问题长度不能超过 ${MAX_QUESTION_LEN} 字` });
+  }
+
+  // 拒绝常见 prompt 注入分隔符与控制字符
+  const injectionPattern = /[\x00-\x08\x0b-\x0c\x0e-\x1f\x7f]|<\/?system>|<\/?instruction>|<\/?prompt>|---\s*system|---\s*instruction|\{\{.*\}\}|\[\[.*\]\]/i;
+  if (injectionPattern.test(rawQuestion)) {
+    return res.status(400).json({ error: '问题包含非法字符，请修改后重试' });
+  }
+
   // 构建牌面描述文本
   const cardDescriptions = cards.map((card, i) => {
     const pos = positions[i] || `第${i + 1}张`;
@@ -276,7 +328,6 @@ app.post('/api/interpret', aiDailyLimiter, async (req, res) => {
     fullMoon: '满月之旅'
   }[spreadType] || '未知';
 
-  // AI 系统提示词（占卜师人设）
   const systemPrompt = `你是一位神秘而睿智的塔罗牌占卜师，拥有数十年的塔罗解读经验。
 你的解读风格：温柔而深邃，充满东方哲学智慧，语言优美诗意。
 请用中文进行占卜解读，每次解读都要：
@@ -286,7 +337,6 @@ app.post('/api/interpret', aiDailyLimiter, async (req, res) => {
 4. 语言富有诗意，但不要过于玄幻
 5. 全文（包含所有小节标题）控制在1000字左右，避免内容被截断`;
 
-  // 四季牌阵有固定的花色→含义对应关系，需要单独告诉AI，否则它不知道这个牌阵的特殊规则
   const seasonContext = spreadType === 'season' ? `
 
 【四季牌阵专属解读框架，请严格按此对应关系解读】
@@ -299,8 +349,6 @@ app.post('/api/interpret', aiDailyLimiter, async (req, res) => {
 - 大阿卡纳牌（中）：是整个季度的关键点，代表能量与灵性成长，以及需要学习和关注的地方，并影响着整个牌阵
 请先逐张按上述对应关系解读，再综合大阿卡纳牌点出的关键主题，给出本季度的整体建议。` : '';
 
-  // 大十字 / 正五芒星：第5张牌（结果/启示）并非随机抽取，而是由前4张牌的数字总和换算出的
-  // 大阿卡纳牌，需要单独告诉AI这一层"由前因汇聚而成的天意"的特殊含义
   const indicatorContext = (spreadType === 'cross' || spreadType === 'pentagram') ? (
     cards.length >= 5
       ? `
@@ -316,8 +364,7 @@ app.post('/api/interpret', aiDailyLimiter, async (req, res) => {
 只抽到了4张牌。请仅围绕这4张牌本身的因果关系进行解读，不要编造或假设一张并不存在的第5张牌。`
   ) : '';
 
-  // 用户提示词（包含牌面信息）
-  const userPrompt = `问卜者的问题：${question || '请为我进行综合占卜'}
+  const userPrompt = `问卜者的问题：${rawQuestion || '请为我进行综合占卜'}
 
 抽到的牌面（${spreadLabel}牌阵）：
 ${cardDescriptions}
@@ -325,20 +372,19 @@ ${seasonContext}${indicatorContext}
 
 请对以上塔罗牌进行深入解读，给出完整的占卜结果和人生建议。`;
 
-  // 设置 SSE 响应头（流式输出必须）
-  // ⚠️ Nginx 反代需配置 proxy_buffering off 否则会变成一次性返回
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
 
+  let clientClosed = false;
+  req.on('close', () => {
+    clientClosed = true;
+    if (!res.writableEnded) res.end();
+  });
+
   try {
     const aiConfig = getAIClientConfig();
 
-    // ----------------------------------------
-    // OpenAI 兼容模式（openai / deepseek / gemini）
-    // DeepSeek 和 Gemini 均兼容 OpenAI 接口格式
-    // 只需切换 baseURL 和 apiKey，无需安装额外 SDK
-    // ----------------------------------------
     if (aiConfig.type === 'openai_compat') {
       const OpenAI = require('openai');
       const client = new OpenAI({
@@ -359,6 +405,7 @@ ${seasonContext}${indicatorContext}
 
       let finishReason = null;
       for await (const chunk of stream) {
+        if (clientClosed) break;
         const choice = chunk.choices[0];
         const content = choice?.delta?.content || '';
         if (content) {
@@ -367,16 +414,10 @@ ${seasonContext}${indicatorContext}
         if (choice?.finish_reason) finishReason = choice.finish_reason;
       }
 
-      // finish_reason === 'length' 说明是被 max_tokens 截断的，不是正常说完
-      // 给个明确提示，别让用户以为是网站坏了
-      if (finishReason === 'length') {
+      if (!clientClosed && finishReason === 'length') {
         res.write(`data: ${JSON.stringify({ text: '\n\n*（因长度限制，解读到此为止，可点击"再次占卜"获取更精炼的解读）*' })}\n\n`);
       }
 
-    // ----------------------------------------
-    // Claude 原生 SDK（Anthropic）
-    // 需要单独安装：npm install @anthropic-ai/sdk
-    // ----------------------------------------
     } else if (aiConfig.type === 'claude') {
       const Anthropic = require('@anthropic-ai/sdk');
       const client = new Anthropic({
@@ -393,6 +434,7 @@ ${seasonContext}${indicatorContext}
 
       let stopReason = null;
       for await (const event of stream) {
+        if (clientClosed) break;
         if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
           res.write(`data: ${JSON.stringify({ text: event.delta.text })}\n\n`);
         }
@@ -401,23 +443,23 @@ ${seasonContext}${indicatorContext}
         }
       }
 
-      if (stopReason === 'max_tokens') {
+      if (!clientClosed && stopReason === 'max_tokens') {
         res.write(`data: ${JSON.stringify({ text: '\n\n*（因长度限制，解读到此为止，可点击"再次占卜"获取更精炼的解读）*' })}\n\n`);
       }
     }
 
-    res.write('data: [DONE]\n\n');
-    res.end();
+    if (!clientClosed) {
+      res.write('data: [DONE]\n\n');
+      res.end();
+    }
 
   } catch (error) {
-    // ⚠️ 安全关键：只把错误记录到服务器日志，绝对不把原始错误发给前端
-    // 原始错误可能包含 API Key 的前四位和后四位（如 sk-****************）
-    // 如果直接发给前端，用户可以在浏览器控制台或抓包工具中看到 Key 特征
     console.error('AI调用错误（仅服务端可见）:', error.message);
 
-    // 前端只收到通用提示，不包含任何敏感信息
-    res.write(`data: ${JSON.stringify({ error: 'AI解读服务暂时不可用，请稍后再试' })}\n\n`);
-    res.end();
+    if (!res.writableEnded) {
+      res.write(`data: ${JSON.stringify({ error: 'AI解读服务暂时不可用，请稍后再试' })}\n\n`);
+      res.end();
+    }
   }
 });
 
@@ -425,6 +467,13 @@ ${seasonContext}${indicatorContext}
 // extensions:['html'] 让 /four-seasons-spread 这种"干净"网址
 // 自动映射到 public/four-seasons-spread.html，不用单独写路由
 app.use(express.static('public', { extensions: ['html'] }));
+
+// 全局错误处理：禁止向客户端泄露堆栈或内部错误
+app.use((err, req, res, next) => {
+  console.error('未捕获错误:', err.message);
+  if (res.headersSent) return next(err);
+  res.status(500).json({ error: '服务暂时不可用，请稍后重试' });
+});
 
 // 启动服务
 app.listen(PORT, () => {
