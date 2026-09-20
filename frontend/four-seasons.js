@@ -162,6 +162,16 @@ document.getElementById('divinationBtn').addEventListener('click', async () => {
 });
 
 // 渲染牌阵（背面朝上，点击单张翻牌）
+function escapeHtml(str) {
+  if (typeof str !== 'string') return String(str);
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function renderFaceDownCards(cards, positions, spreadType) {
   const section = document.getElementById('cardsSection');
   const grid = document.getElementById('cardsGrid');
@@ -193,12 +203,12 @@ function renderFaceDownCards(cards, positions, spreadType) {
         </div>
         <div class="card-face card-front">
           <div class="tarot-card ${card.isReversed ? 'reversed' : ''}">
-            <div class="card-position">${positions[i] || `第${i + 1}张`}</div>
-            <span class="card-emoji">${card.image}</span>
-            <div class="card-name">${card.name}</div>
-            <div class="card-name-en">${card.nameEn}</div>
+            <div class="card-position">${escapeHtml(positions[i] || `第${i + 1}张`)}</div>
+            <span class="card-emoji">${escapeHtml(card.image)}</span>
+            <div class="card-name">${escapeHtml(card.name)}</div>
+            <div class="card-name-en">${escapeHtml(card.nameEn)}</div>
             ${card.isReversed ? '<span class="card-reversed-badge">逆位</span>' : ''}
-            <div class="card-keywords">${keywords}</div>
+            <div class="card-keywords">${escapeHtml(keywords)}</div>
           </div>
         </div>
       </div>`;
