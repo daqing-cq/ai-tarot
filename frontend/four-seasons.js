@@ -199,18 +199,16 @@ function renderFaceDownCards(cards, positions, spreadType) {
     slot.innerHTML = `
       <div class="card-inner">
         <div class="card-face card-back">
-          <img class="card-back-img" src="${CARD_BACK_IMAGE}" alt="" draggable="false">
+          <span class="card-back-icon">🔮</span>
         </div>
         <div class="card-face card-front">
           <div class="tarot-card ${card.isReversed ? 'reversed' : ''}">
-            <img class="card-art" src="${cardImagePath(card)}" alt="${escapeHtml(card.nameEn)}"
-                 draggable="false" loading="lazy" decoding="async">
-            <div class="card-caption">
-              <div class="card-position">${escapeHtml(positions[i] || `第${i + 1}张`)}</div>
-              <div class="card-name">${escapeHtml(card.name)}<span class="card-name-en">${escapeHtml(card.nameEn)}</span></div>
-              ${card.isReversed ? '<span class="card-reversed-badge">逆位</span>' : ''}
-              <div class="card-keywords">${escapeHtml(keywords)}</div>
-            </div>
+            <div class="card-position">${escapeHtml(positions[i] || `第${i + 1}张`)}</div>
+            <span class="card-emoji">${escapeHtml(card.image)}</span>
+            <div class="card-name">${escapeHtml(card.name)}</div>
+            <div class="card-name-en">${escapeHtml(card.nameEn)}</div>
+            ${card.isReversed ? '<span class="card-reversed-badge">逆位</span>' : ''}
+            <div class="card-keywords">${escapeHtml(keywords)}</div>
           </div>
         </div>
       </div>`;
