@@ -10,6 +10,9 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <!-- 经典塔罗卡面图片预加载：翻牌时无需等待下载 -->
+  <link rel="preload" as="image" href="cards/card-back.webp">
+
   <!-- 四季牌阵悬浮入口：固定在右上角，随时可点；点击时实时核验今天是否为二分二至 -->
   <button id="seasonFloatBtn" class="season-float-btn" type="button" title="四季牌阵 · 仅限春分·夏至·秋分·冬至">
     <span class="season-float-icon">🧭</span>
@@ -116,6 +119,7 @@
     </p>
   </footer>
 
+  <script src="cards.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
